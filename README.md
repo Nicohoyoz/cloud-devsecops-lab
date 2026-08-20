@@ -1,133 +1,89 @@
 # cloud-devsecops-lab
 
-A hands-on cloud infrastructure project built to demonstrate **infrastructure
-as code, cloud networking, and (in progress) DevSecOps practices** on AWS.
+AWS infrastructure built as code with Terraform and configured with Ansible.
+Everything here is provisioned from version control, not clicked together in a
+console. The aim is one documented system that shows how cloud infrastructure
+gets built, configured, and (in later phases) secured and automated.
 
-Everything here is provisioned from version-controlled Terraform, not clicked
-together in a console. The goal is one coherent, documented system that shows
-how cloud infrastructure is built, secured, and automated, end to end.
+Status: in progress. The AWS networking, a running EC2 instance, and Ansible
+configuration are built and working. Security scanning, CI/CD, and detection
+are planned and listed in the roadmap. Each item moves out of "planned" only
+once it actually works.
 
-> **Status:** actively building. Layer 2 (AWS networking + compute) is complete
-> and working. Security scanning, CI/CD, and threat detection are planned and
-> tracked in the roadmap below. This README reflects what is genuinely built at
-> each stage.
+## Built so far
 
----
+**Networking and compute (Terraform).** A VPC (`10.0.0.0/16`) with a public
+subnet (`10.0.1.0/24`), an internet gateway, a route table sending outbound
+traffic through it, and a default-deny security group that allows inbound SSH
+and HTTP only. An Ubuntu 22.04 EC2 instance (`t3.micro`) runs in the subnet,
+reachable over SSH by a registered key pair. The Ubuntu AMI is resolved at plan
+time by a data source instead of being hardcoded, so it stays current and
+isn't pinned to one region.
 
-## What's built so far
+**Configuration (Ansible).** A playbook installs nginx, ensures it is running
+and enabled on boot, and deploys a custom `index.html` over the default page.
+The instance serves that page publicly on port 80. This is the split worth
+noticing: Terraform builds the machine, Ansible decides what it runs.
 
-A complete, working AWS network built from scratch in Terraform, with a Linux
-server running inside it:
+The whole stack comes up with `terraform apply`, gets configured with
+`ansible-playbook`, and tears down with `terraform destroy` in dependency
+order. A full rebuild takes about two minutes.
 
-- **VPC** — an isolated private network (`10.0.0.0/16`).
-- **Public subnet** — a `/24` slice of the VPC (`10.0.1.0/24`).
-- **Internet gateway** — the connection between the VPC and the internet.
-- **Route table + association** — routes outbound traffic (`0.0.0.0/0`) through
-  the gateway and attaches those rules to the subnet.
-- **Security group** — default-deny firewall allowing only inbound SSH (22) and
-  HTTP (80), with all outbound traffic permitted.
-- **EC2 instance** — an Ubuntu 22.04 server (`t3.micro`, free-tier), launched
-  into the subnet, guarded by the security group, and reachable over SSH using a
-  registered key pair. The Ubuntu AMI is looked up dynamically with a Terraform
-  data source rather than hardcoded.
-
-The entire stack builds with `terraform apply` and tears down cleanly with
-`terraform destroy`, in correct dependency order, in about two minutes.
-
-### Architecture (current)
+## Layout
 
 ```
-                    Internet
-                       |
-              [ Internet Gateway ]
-                       |
-        +--------------------------------+
-        |  VPC  10.0.0.0/16              |
-        |                                |
-        |   [ Route Table ] --> 0.0.0.0/0 via IGW
-        |          |                     |
-        |   [ Public Subnet 10.0.1.0/24 ]
-        |          |                     |
-        |   [ Security Group ]           |
-        |     inbound: SSH 22, HTTP 80   |
-        |     outbound: all              |
-        |          |                     |
-        |   [ EC2: Ubuntu 22.04 t3.micro ]
-        |                                |
-        +--------------------------------+
+terraform/ (root main.tf)  VPC, subnet, gateway, routing, security group, EC2
+ansible/
+  inventory.ini            target host and SSH connection settings
+  web.yml                  install nginx, deploy the page
+  files/index.html         the page that gets served
 ```
 
----
-
-## Tech used
-
-- **Terraform** (HCL) — all infrastructure as code
-- **AWS** — VPC, subnet, internet gateway, route tables, security groups, EC2
-- **Ubuntu 22.04** on EC2, accessed via SSH key pair
-
----
-
-## How it works
+## Running it
 
 ```bash
-# initialize the working directory and download the AWS provider
-terraform init
+terraform init            # download the AWS provider
+terraform plan            # read this before every apply
+terraform apply           # build the infrastructure
 
-# preview exactly what will be created (read this before every apply)
-terraform plan
+cd ansible
+ansible-playbook -i inventory.ini web.yml   # configure the server
 
-# build the infrastructure
-terraform apply
-
-# tear it all down when done (stops all cost)
-terraform destroy
+terraform destroy         # tear it all down, stops cost
 ```
 
-Credentials are supplied through the AWS CLI (`~/.aws`) and are **never** stored
-in the repo. The Terraform state file and provider cache are git-ignored.
+Credentials come from the AWS CLI (`~/.aws`) and are never stored in the repo.
+The Terraform state file and provider cache are git-ignored. The inventory
+holds the instance's public IP, which changes on each rebuild; a later phase
+will have Terraform generate the inventory so that step is automatic.
 
----
+## Notes on the choices
 
-## Design decisions worth noting
-
-- **Look up the AMI, don't hardcode it.** A Terraform data source fetches the
-  latest official Canonical Ubuntu 22.04 image, so the AMI never goes stale and
-  isn't pinned to one region.
-- **Default-deny security group.** Nothing is allowed inbound except the two
-  ports the workload actually needs. This mirrors least-privilege firewall
-  design.
-- **SSH open to `0.0.0.0/0` is a deliberate lab choice.** In production this
-  would be restricted to a known admin IP or a bastion host. Flagged rather than
-  hidden.
-- **Destroy after each session.** Compute costs money by the hour, so the
-  workflow is build → verify → destroy, which infrastructure as code makes
-  trivial. A zero-spend billing alarm guards the account.
-- **Non-root IAM user.** All work is done as a scoped IAM user, not the AWS root
-  account.
-
----
+- The AMI is looked up, not hardcoded. Hardcoded AMI IDs go stale and differ
+  per region.
+- The security group is default-deny. Only SSH (22) and HTTP (80) are open
+  inbound. SSH is open to `0.0.0.0/0` here for lab convenience; in production
+  that would be a known admin IP or a bastion host.
+- Compute is destroyed after each session. Infrastructure as code makes a
+  two-minute rebuild cheap, so there is no reason to leave it running. A
+  zero-spend billing alarm backs this up.
+- Work is done as a scoped IAM user, not the AWS root account.
 
 ## Roadmap
 
-This project is built in layers. Each item is added only when it is genuinely
-working and documented.
-
-| Layer | Focus | Status |
+| Phase | Item | Status |
 |---|---|---|
-| **2** | AWS networking + EC2 via Terraform | **Complete** |
-| 2 | Configure the instance with Ansible (web server) | Planned |
-| 2 | Run a containerized service (Docker) on the instance | Planned |
-| 3 | IaC security scanning (Checkov) | Planned |
-| 3 | CI/CD pipeline (GitHub Actions) running scans on every push | Planned |
-| 3 | Threat detection loop (Sigma rules + MITRE ATT&CK) | Planned |
-| 3 | Extras if time allows: Semgrep (SAST), Falco (runtime), k3s | Planned |
+| 2 | VPC, subnet, gateway, routing, security group, EC2 (Terraform) | Done |
+| 2 | Install nginx and deploy a page (Ansible) | Done |
+| 2 | Run the service in a Docker container | Planned |
+| 3 | IaC security scanning with Checkov | Planned |
+| 3 | CI/CD with GitHub Actions running scans on push | Planned |
+| 3 | Detection rules (Sigma) mapped to MITRE ATT&CK | Planned |
+| 3 | If time allows: Semgrep, Falco, k3s | Planned |
 
----
+## Related
 
-## Related work
-
-This project builds on a prior infrastructure lab
-([`linux-infra-lab`](https://github.com/Nicohoyoz/linux-infra-lab)), which
-covers Terraform against a local container fleet, Ansible configuration
-management, Docker, and Prometheus/Grafana monitoring. `cloud-devsecops-lab`
-takes those same patterns to real cloud infrastructure and adds a security focus.
+Builds on [`linux-infra-lab`](https://github.com/Nicohoyoz/linux-infra-lab):
+Terraform against a local container fleet, Ansible, Docker, and
+Prometheus/Grafana. This repo takes the same patterns to real cloud and adds a
+security focus.
