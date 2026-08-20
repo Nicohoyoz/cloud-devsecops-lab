@@ -1,0 +1,29 @@
+---
+#PLaybook:listing the tasks  but first configuring the web server
+
+- name: Configure Web Server
+  hosts: web                      #host = (target "web" group from inventory
+  become: true    #run tasks with sudo (neede to install packages)
+
+
+
+  tasks:
+  - name: Update apt package cache
+    apt:
+     update_cache: yes   #like running "apt update" first
+
+  - name: Install Service #nginix
+    apt:
+     name: nginx   #the package to install
+     state: present   #make sure its current/installed
+
+  - name: ensure nginx is running
+    service:
+      name: nginx
+      state: started   #making sure it running now
+      enabled: yes    #"enable: yes" = starts automatically on boot
+
+  - name: Deploy custom index page
+    copy:
+        src: files/index.html
+        dest: /var/www/html/index.html
