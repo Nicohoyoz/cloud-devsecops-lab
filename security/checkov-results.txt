@@ -1,0 +1,366 @@
+
+       _               _
+   ___| |__   ___  ___| | _______   __
+  / __| '_ \ / _ \/ __| |/ / _ \ \ / /
+ | (__| | | |  __/ (__|   < (_) \ V /
+  \___|_| |_|\___|\___|_|\_\___/ \_/
+
+By Prisma Cloud | version: 3.3.13 
+
+terraform scan results:
+
+Passed checks: 12, Failed checks: 9, Skipped checks: 0
+
+Check: CKV_AWS_41: "Ensure no hard coded AWS access key and secret key exists in provider"
+	PASSED for resource: aws.default
+	File: /main.tf:14-16
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/secrets-policies/bc-aws-secrets-5
+Check: CKV_AWS_386: "Reduce potential for WhoAMI cloud image name confusion attack"
+	PASSED for resource: aws_ami.ubuntu
+	File: /main.tf:130-138
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-supply-chain-policies/bc-aws-386
+Check: CKV_AWS_130: "Ensure VPC subnets do not assign public IP by default"
+	PASSED for resource: aws_subnet.public
+	File: /main.tf:35-42
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-networking-policies/ensure-vpc-subnets-do-not-assign-public-ip-by-default
+Check: CKV_AWS_23: "Ensure every security group and rule has a description"
+	PASSED for resource: aws_security_group.web
+	File: /main.tf:82-125
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-networking-policies/networking-31
+Check: CKV_AWS_25: "Ensure no security groups allow ingress from 0.0.0.0:0 to port 3389"
+	PASSED for resource: aws_security_group.web
+	File: /main.tf:82-125
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-networking-policies/networking-2
+Check: CKV_AWS_277: "Ensure no security groups allow ingress from 0.0.0.0:0 to port -1"
+	PASSED for resource: aws_security_group.web
+	File: /main.tf:82-125
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-networking-policies/ensure-aws-security-group-does-not-allow-all-traffic-on-all-ports
+Check: CKV_AWS_8: "Ensure all data stored in the Launch configuration or instance Elastic Blocks Store is securely encrypted"
+	PASSED for resource: aws_instance.web
+	File: /main.tf:150-170
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-general-policies/general-13
+Check: CKV_AWS_46: "Ensure no hard-coded secrets exist in EC2 user data"
+	PASSED for resource: aws_instance.web
+	File: /main.tf:150-170
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/secrets-policies/bc-aws-secrets-1
+Check: CKV_AWS_79: "Ensure Instance Metadata Service Version 1 is not enabled"
+	PASSED for resource: aws_instance.web
+	File: /main.tf:150-170
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-general-policies/bc-aws-general-31
+Check: CKV2_AWS_35: "AWS NAT Gateways should be utilized for the default route"
+	PASSED for resource: aws_route_table.public
+	File: /main.tf:59-70
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-networking-policies/ensure-aws-nat-gateways-are-utilized-for-the-default-route
+Check: CKV2_AWS_44: "Ensure AWS route table with VPC peering does not contain routes overly permissive to all traffic"
+	PASSED for resource: aws_route_table.public
+	File: /main.tf:59-70
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-networking-policies/ensure-aws-route-table-with-vpc-peering-does-not-contain-routes-overly-permissive-to-all-traffic
+Check: CKV2_AWS_5: "Ensure that Security Groups are attached to another resource"
+	PASSED for resource: aws_security_group.web
+	File: /main.tf:82-125
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-networking-policies/ensure-that-security-groups-are-attached-to-ec2-instances-or-elastic-network-interfaces-enis
+Check: CKV_AWS_260: "Ensure no security groups allow ingress from 0.0.0.0:0 to port 80"
+	FAILED for resource: aws_security_group.web
+	File: /main.tf:82-125
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-networking-policies/ensure-aws-security-groups-do-not-allow-ingress-from-00000-to-port-80
+
+		82  | resource "aws_security_group" "web" {
+		83  |  name = "cloud-devsecops-sg"
+		84  |  description = "Allowing SSH and HTTP inbound"
+		85  |  vpc_id = aws_vpc.main.id                # this security group lives in our VPC
+		86  | 
+		87  | 
+		88  | #Ingress rule #1: allow SSH (Port 22) so we can log in remotely
+		89  | 
+		90  | ingress {
+		91  |  description = "SSH"
+		92  |  from_port = 22
+		93  |  to_port = 22
+		94  | protocol = "tcp"
+		95  |  cidr_blocks = ["0.0.0.0/0"]    #from any IP (we'll tighen this later"
+		96  | 
+		97  |  }
+		98  | 
+		99  | #Ingress rule #2:  allow HTTP (port 80) so the web app is reachable
+		100 | 
+		101 | ingress {
+		102 |  description = "HTTP"
+		103 |  from_port = 80
+		104 |  to_port = 80
+		105 |  protocol = "tcp"
+		106 |  cidr_blocks = ["0.0.0.0/0"]      #from anywhere in the internet
+		107 |  
+		108 | }
+		109 | 
+		110 | #Egress: allow all outbound traffic
+		111 | 
+		112 | egress {
+		113 |  description = "Allow all outbound traffic"
+		114 |  from_port = 0
+		115 |  to_port = 0
+		116 |  protocol = "-1"          #means all protocols
+		117 |  cidr_blocks = ["0.0.0.0/0"]      #to anywehere
+		118 | 
+		119 | }
+		120 |  
+		121 | tags = { 
+		122 |  Name = "cloud-devsecops-web-sg"
+		123 | 
+		124 |  }
+		125 | }
+
+Check: CKV_AWS_24: "Ensure no security groups allow ingress from 0.0.0.0:0 to port 22"
+	FAILED for resource: aws_security_group.web
+	File: /main.tf:82-125
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-networking-policies/networking-1-port-security
+
+		82  | resource "aws_security_group" "web" {
+		83  |  name = "cloud-devsecops-sg"
+		84  |  description = "Allowing SSH and HTTP inbound"
+		85  |  vpc_id = aws_vpc.main.id                # this security group lives in our VPC
+		86  | 
+		87  | 
+		88  | #Ingress rule #1: allow SSH (Port 22) so we can log in remotely
+		89  | 
+		90  | ingress {
+		91  |  description = "SSH"
+		92  |  from_port = 22
+		93  |  to_port = 22
+		94  | protocol = "tcp"
+		95  |  cidr_blocks = ["0.0.0.0/0"]    #from any IP (we'll tighen this later"
+		96  | 
+		97  |  }
+		98  | 
+		99  | #Ingress rule #2:  allow HTTP (port 80) so the web app is reachable
+		100 | 
+		101 | ingress {
+		102 |  description = "HTTP"
+		103 |  from_port = 80
+		104 |  to_port = 80
+		105 |  protocol = "tcp"
+		106 |  cidr_blocks = ["0.0.0.0/0"]      #from anywhere in the internet
+		107 |  
+		108 | }
+		109 | 
+		110 | #Egress: allow all outbound traffic
+		111 | 
+		112 | egress {
+		113 |  description = "Allow all outbound traffic"
+		114 |  from_port = 0
+		115 |  to_port = 0
+		116 |  protocol = "-1"          #means all protocols
+		117 |  cidr_blocks = ["0.0.0.0/0"]      #to anywehere
+		118 | 
+		119 | }
+		120 |  
+		121 | tags = { 
+		122 |  Name = "cloud-devsecops-web-sg"
+		123 | 
+		124 |  }
+		125 | }
+
+Check: CKV_AWS_382: "Ensure no security groups allow egress from 0.0.0.0:0 to port -1"
+	FAILED for resource: aws_security_group.web
+	File: /main.tf:82-125
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-networking-policies/bc-aws-382
+
+		82  | resource "aws_security_group" "web" {
+		83  |  name = "cloud-devsecops-sg"
+		84  |  description = "Allowing SSH and HTTP inbound"
+		85  |  vpc_id = aws_vpc.main.id                # this security group lives in our VPC
+		86  | 
+		87  | 
+		88  | #Ingress rule #1: allow SSH (Port 22) so we can log in remotely
+		89  | 
+		90  | ingress {
+		91  |  description = "SSH"
+		92  |  from_port = 22
+		93  |  to_port = 22
+		94  | protocol = "tcp"
+		95  |  cidr_blocks = ["0.0.0.0/0"]    #from any IP (we'll tighen this later"
+		96  | 
+		97  |  }
+		98  | 
+		99  | #Ingress rule #2:  allow HTTP (port 80) so the web app is reachable
+		100 | 
+		101 | ingress {
+		102 |  description = "HTTP"
+		103 |  from_port = 80
+		104 |  to_port = 80
+		105 |  protocol = "tcp"
+		106 |  cidr_blocks = ["0.0.0.0/0"]      #from anywhere in the internet
+		107 |  
+		108 | }
+		109 | 
+		110 | #Egress: allow all outbound traffic
+		111 | 
+		112 | egress {
+		113 |  description = "Allow all outbound traffic"
+		114 |  from_port = 0
+		115 |  to_port = 0
+		116 |  protocol = "-1"          #means all protocols
+		117 |  cidr_blocks = ["0.0.0.0/0"]      #to anywehere
+		118 | 
+		119 | }
+		120 |  
+		121 | tags = { 
+		122 |  Name = "cloud-devsecops-web-sg"
+		123 | 
+		124 |  }
+		125 | }
+
+Check: CKV_AWS_126: "Ensure that detailed monitoring is enabled for EC2 instances"
+	FAILED for resource: aws_instance.web
+	File: /main.tf:150-170
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-logging-policies/ensure-that-detailed-monitoring-is-enabled-for-ec2-instances
+
+		150 | resource "aws_instance" "web" {
+		151 |   ami                         = data.aws_ami.ubuntu.id   #the Ubuntu 22.04 image we looked up
+		152 |   instance_type               = "t3.micro"            #Free-tier eligible size
+		153 |   subnet_id                   = aws_subnet.public.id  #live in our public subnet
+		154 |   vpc_security_group_ids      = [aws_security_group.web.id]    #guarded by our web bouncer
+		155 |   key_name                    = aws_key_pair.main.key_name     #use our registered key
+		156 |   associate_public_ip_address = true                       #give it a pub IP so we can reach it
+		157 | 
+		158 | #Enforce IMSDv2 - requires a session token for instance metadata access.
+		159 |   metadata_options {
+		160 |    http_tokens = "required"
+		161 | }
+		162 | 
+		163 | root_block_device {
+		164 |  encrypted = true
+		165 | }
+		166 | 
+		167 |   tags = {
+		168 |     Name = "cloud-devsecops-web"
+		169 |  }
+		170 | }
+
+Check: CKV_AWS_135: "Ensure that EC2 is EBS optimized"
+	FAILED for resource: aws_instance.web
+	File: /main.tf:150-170
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-general-policies/ensure-that-ec2-is-ebs-optimized
+
+		150 | resource "aws_instance" "web" {
+		151 |   ami                         = data.aws_ami.ubuntu.id   #the Ubuntu 22.04 image we looked up
+		152 |   instance_type               = "t3.micro"            #Free-tier eligible size
+		153 |   subnet_id                   = aws_subnet.public.id  #live in our public subnet
+		154 |   vpc_security_group_ids      = [aws_security_group.web.id]    #guarded by our web bouncer
+		155 |   key_name                    = aws_key_pair.main.key_name     #use our registered key
+		156 |   associate_public_ip_address = true                       #give it a pub IP so we can reach it
+		157 | 
+		158 | #Enforce IMSDv2 - requires a session token for instance metadata access.
+		159 |   metadata_options {
+		160 |    http_tokens = "required"
+		161 | }
+		162 | 
+		163 | root_block_device {
+		164 |  encrypted = true
+		165 | }
+		166 | 
+		167 |   tags = {
+		168 |     Name = "cloud-devsecops-web"
+		169 |  }
+		170 | }
+
+Check: CKV_AWS_88: "EC2 instance should not have public IP."
+	FAILED for resource: aws_instance.web
+	File: /main.tf:150-170
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/public-policies/public-12
+
+		150 | resource "aws_instance" "web" {
+		151 |   ami                         = data.aws_ami.ubuntu.id   #the Ubuntu 22.04 image we looked up
+		152 |   instance_type               = "t3.micro"            #Free-tier eligible size
+		153 |   subnet_id                   = aws_subnet.public.id  #live in our public subnet
+		154 |   vpc_security_group_ids      = [aws_security_group.web.id]    #guarded by our web bouncer
+		155 |   key_name                    = aws_key_pair.main.key_name     #use our registered key
+		156 |   associate_public_ip_address = true                       #give it a pub IP so we can reach it
+		157 | 
+		158 | #Enforce IMSDv2 - requires a session token for instance metadata access.
+		159 |   metadata_options {
+		160 |    http_tokens = "required"
+		161 | }
+		162 | 
+		163 | root_block_device {
+		164 |  encrypted = true
+		165 | }
+		166 | 
+		167 |   tags = {
+		168 |     Name = "cloud-devsecops-web"
+		169 |  }
+		170 | }
+
+Check: CKV2_AWS_41: "Ensure an IAM role is attached to EC2 instance"
+	FAILED for resource: aws_instance.web
+	File: /main.tf:150-170
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-iam-policies/ensure-an-iam-role-is-attached-to-ec2-instance
+
+		150 | resource "aws_instance" "web" {
+		151 |   ami                         = data.aws_ami.ubuntu.id   #the Ubuntu 22.04 image we looked up
+		152 |   instance_type               = "t3.micro"            #Free-tier eligible size
+		153 |   subnet_id                   = aws_subnet.public.id  #live in our public subnet
+		154 |   vpc_security_group_ids      = [aws_security_group.web.id]    #guarded by our web bouncer
+		155 |   key_name                    = aws_key_pair.main.key_name     #use our registered key
+		156 |   associate_public_ip_address = true                       #give it a pub IP so we can reach it
+		157 | 
+		158 | #Enforce IMSDv2 - requires a session token for instance metadata access.
+		159 |   metadata_options {
+		160 |    http_tokens = "required"
+		161 | }
+		162 | 
+		163 | root_block_device {
+		164 |  encrypted = true
+		165 | }
+		166 | 
+		167 |   tags = {
+		168 |     Name = "cloud-devsecops-web"
+		169 |  }
+		170 | }
+
+Check: CKV2_AWS_11: "Ensure VPC flow logging is enabled in all VPCs"
+	FAILED for resource: aws_vpc.main
+	File: /main.tf:23-29
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-logging-policies/logging-9-enable-vpc-flow-logging
+
+		23 | resource "aws_vpc" "main" {
+		24 |   cidr_block = "10.0.0.0/16"   # the address range for the whole network
+		25 | 
+		26 |   tags = {
+		27 |     Name = "cloud-devsecops-vpc"   # a human-friendly name shown in the console
+		28 |   }
+		29 | }
+
+Check: CKV2_AWS_12: "Ensure the default security group of every VPC restricts all traffic"
+	FAILED for resource: aws_vpc.main
+	File: /main.tf:23-29
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-networking-policies/networking-4
+
+		23 | resource "aws_vpc" "main" {
+		24 |   cidr_block = "10.0.0.0/16"   # the address range for the whole network
+		25 | 
+		26 |   tags = {
+		27 |     Name = "cloud-devsecops-vpc"   # a human-friendly name shown in the console
+		28 |   }
+		29 | }
+
+ansible scan results:
+
+Passed checks: 4, Failed checks: 0, Skipped checks: 0
+
+Check: CKV_ANSIBLE_5: "Ensure that packages with untrusted or missing signatures are not used"
+	PASSED for resource: tasks.apt.Update apt package cache
+	File: /ansible/web.yml:11-16
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/ansible-policies/ansible-compute-policies/ansible-5
+Check: CKV_ANSIBLE_5: "Ensure that packages with untrusted or missing signatures are not used"
+	PASSED for resource: tasks.apt.Install Service
+	File: /ansible/web.yml:15-21
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/ansible-policies/ansible-compute-policies/ansible-5
+Check: CKV_ANSIBLE_6: "Ensure that the force parameter is not used, as it disables signature validation and allows packages to be downgraded which can leave the system in a broken or inconsistent state"
+	PASSED for resource: tasks.apt.Update apt package cache
+	File: /ansible/web.yml:11-16
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/ansible-policies/ansible-compute-policies/ansible-6
+Check: CKV_ANSIBLE_6: "Ensure that the force parameter is not used, as it disables signature validation and allows packages to be downgraded which can leave the system in a broken or inconsistent state"
+	PASSED for resource: tasks.apt.Install Service
+	File: /ansible/web.yml:15-21
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/ansible-policies/ansible-compute-policies/ansible-6
+
