@@ -1,0 +1,24 @@
+name: Security Scan
+
+#When should this run? on every push and pull request
+on:
+  push:
+  pull_request:
+
+#Workflow contains 1-n jobs,this one: Scanner main.tf (Iac),automatically on ph/pl
+
+jobs:
+  checkov:
+    name: Checkov Iac Scan
+    runs-on: ubuntu-latest     #runner, fresh Ubuntu machine
+
+    steps:
+      - name: Check out our Repo  #no host/server, check GH repo (otherwords, no jenkins)
+        uses: actions/checkout@v4
+
+    steps:
+      - name: Run Checkov
+        uses: bridgecrewio/checkov-actions@v12
+        with:
+          directory: .
+          soft_fail: true
