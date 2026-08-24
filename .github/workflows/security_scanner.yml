@@ -16,7 +16,6 @@ jobs:
       - name: Check out our Repo  #no host/server, check GH repo (otherwords, no jenkins)
         uses: actions/checkout@v4
 
-    steps:
       - name: Run Checkov
         uses: bridgecrewio/checkov-actions@v12
         with:
