@@ -169,19 +169,7 @@ resource "aws_iam_role" "web" {
 }
 
 
-# Attach AWS-managed SSM POLICY to the role.
-# Lets the instance be managed via Systems Manager (no SSH-open-to-world needed).
-resource "aws_iam_role_policy_attachment" "ssm" {
-  role       = aws_iam_role.web.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
-}
 
-#INSTANCE PROFILE - the wrapper that lets the EC2 wear the role
-
-resource "aws_iam_instance_profile" "web" {
-  name = "cloud-devsecops-web-profile"
-  role = aws_iam_role.web.name
-}
 #EC2 INSTANCE - the actual virtual server.
 
 resource "aws_instance" "web" {
@@ -191,7 +179,6 @@ resource "aws_instance" "web" {
   vpc_security_group_ids      = [aws_security_group.web.id]    #guarded by our web bouncer
   key_name                    = aws_key_pair.main.key_name     #use our registered key
   associate_public_ip_address = true                       #give it a pub IP so we can reach it
-  iam_instance_profile        = aws_iam_role.web.name
 
 #Enforce IMSDv2 - requires a session token for instance metadata access.
   metadata_options {
