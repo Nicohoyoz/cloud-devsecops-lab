@@ -1,4 +1,5 @@
 
+
        _               _
    ___| |__   ___  ___| | _______   __
   / __| '_ \ / _ \/ __| |/ / _ \ \ / /
@@ -6,19 +7,14 @@
   \___|_| |_|\___|\___|_|\_\___/ \_/
 
 By Prisma Cloud | version: 3.3.13 
+Update available 3.3.13 -> 3.3.15
+Run pip3 install -U checkov to update 
+
 
 terraform scan results:
 
-Passed checks: 12, Failed checks: 9, Skipped checks: 0
+Passed checks: 20, Failed checks: 8, Skipped checks: 0
 
-Check: CKV_AWS_41: "Ensure no hard coded AWS access key and secret key exists in provider"
-	PASSED for resource: aws.default
-	File: /main.tf:14-16
-	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/secrets-policies/bc-aws-secrets-5
-Check: CKV_AWS_386: "Reduce potential for WhoAMI cloud image name confusion attack"
-	PASSED for resource: aws_ami.ubuntu
-	File: /main.tf:130-138
-	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-supply-chain-policies/bc-aws-386
 Check: CKV_AWS_130: "Ensure VPC subnets do not assign public IP by default"
 	PASSED for resource: aws_subnet.public
 	File: /main.tf:35-42
@@ -35,22 +31,61 @@ Check: CKV_AWS_277: "Ensure no security groups allow ingress from 0.0.0.0:0 to p
 	PASSED for resource: aws_security_group.web
 	File: /main.tf:82-125
 	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-networking-policies/ensure-aws-security-group-does-not-allow-all-traffic-on-all-ports
+Check: CKV_AWS_60: "Ensure IAM role allows only specific services or principals to assume it"
+	PASSED for resource: aws_iam_role.web
+	File: /main.tf:149-169
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-iam-policies/bc-aws-iam-44
+Check: CKV_AWS_274: "Disallow IAM roles, users, and groups from using the AWS AdministratorAccess policy"
+	PASSED for resource: aws_iam_role.web
+	File: /main.tf:149-169
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-iam-policies/bc-aws-274
+Check: CKV_AWS_393: "Ensure AWS GitHub Actions OIDC authorization policies only allow safe claims and claim order on IAM role"
+	PASSED for resource: aws_iam_role.web
+	File: /main.tf:149-169
+Check: CKV_AWS_61: "Ensure AWS IAM policy does not allow assume role permission across all services"
+	PASSED for resource: aws_iam_role.web
+	File: /main.tf:149-169
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-iam-policies/bc-aws-iam-45
+Check: CKV_AWS_274: "Disallow IAM roles, users, and groups from using the AWS AdministratorAccess policy"
+	PASSED for resource: aws_iam_role_policy_attachment.ssm
+	File: /main.tf:174-177
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-iam-policies/bc-aws-274
 Check: CKV_AWS_8: "Ensure all data stored in the Launch configuration or instance Elastic Blocks Store is securely encrypted"
 	PASSED for resource: aws_instance.web
-	File: /main.tf:150-170
+	File: /main.tf:187-208
 	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-general-policies/general-13
 Check: CKV_AWS_46: "Ensure no hard-coded secrets exist in EC2 user data"
 	PASSED for resource: aws_instance.web
-	File: /main.tf:150-170
+	File: /main.tf:187-208
 	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/secrets-policies/bc-aws-secrets-1
 Check: CKV_AWS_79: "Ensure Instance Metadata Service Version 1 is not enabled"
 	PASSED for resource: aws_instance.web
-	File: /main.tf:150-170
+	File: /main.tf:187-208
 	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-general-policies/bc-aws-general-31
+Check: CKV_AWS_41: "Ensure no hard coded AWS access key and secret key exists in provider"
+	PASSED for resource: aws.default
+	File: /main.tf:14-16
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/secrets-policies/bc-aws-secrets-5
+Check: CKV_AWS_386: "Reduce potential for WhoAMI cloud image name confusion attack"
+	PASSED for resource: aws_ami.ubuntu
+	File: /main.tf:130-138
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-supply-chain-policies/bc-aws-386
 Check: CKV2_AWS_35: "AWS NAT Gateways should be utilized for the default route"
 	PASSED for resource: aws_route_table.public
 	File: /main.tf:59-70
 	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-networking-policies/ensure-aws-nat-gateways-are-utilized-for-the-default-route
+Check: CKV2_AWS_41: "Ensure an IAM role is attached to EC2 instance"
+	PASSED for resource: aws_instance.web
+	File: /main.tf:187-208
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-iam-policies/ensure-an-iam-role-is-attached-to-ec2-instance
+Check: CKV2_AWS_56: "Ensure AWS Managed IAMFullAccess IAM policy is not used."
+	PASSED for resource: aws_iam_role.web
+	File: /main.tf:149-169
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-iam-policies/bc-aws-2-56
+Check: CKV2_AWS_56: "Ensure AWS Managed IAMFullAccess IAM policy is not used."
+	PASSED for resource: aws_iam_role_policy_attachment.ssm
+	File: /main.tf:174-177
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-iam-policies/bc-aws-2-56
 Check: CKV2_AWS_44: "Ensure AWS route table with VPC peering does not contain routes overly permissive to all traffic"
 	PASSED for resource: aws_route_table.public
 	File: /main.tf:59-70
@@ -211,111 +246,87 @@ Check: CKV_AWS_382: "Ensure no security groups allow egress from 0.0.0.0:0 to po
 
 Check: CKV_AWS_126: "Ensure that detailed monitoring is enabled for EC2 instances"
 	FAILED for resource: aws_instance.web
-	File: /main.tf:150-170
+	File: /main.tf:187-208
 	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-logging-policies/ensure-that-detailed-monitoring-is-enabled-for-ec2-instances
 
-		150 | resource "aws_instance" "web" {
-		151 |   ami                         = data.aws_ami.ubuntu.id   #the Ubuntu 22.04 image we looked up
-		152 |   instance_type               = "t3.micro"            #Free-tier eligible size
-		153 |   subnet_id                   = aws_subnet.public.id  #live in our public subnet
-		154 |   vpc_security_group_ids      = [aws_security_group.web.id]    #guarded by our web bouncer
-		155 |   key_name                    = aws_key_pair.main.key_name     #use our registered key
-		156 |   associate_public_ip_address = true                       #give it a pub IP so we can reach it
-		157 | 
-		158 | #Enforce IMSDv2 - requires a session token for instance metadata access.
-		159 |   metadata_options {
-		160 |    http_tokens = "required"
-		161 | }
-		162 | 
-		163 | root_block_device {
-		164 |  encrypted = true
-		165 | }
-		166 | 
-		167 |   tags = {
-		168 |     Name = "cloud-devsecops-web"
-		169 |  }
-		170 | }
+		187 | resource "aws_instance" "web" {
+		188 |   ami                         = data.aws_ami.ubuntu.id   #the Ubuntu 22.04 image we looked up
+		189 |   instance_type               = "t3.micro"            #Free-tier eligible size
+		190 |   subnet_id                   = aws_subnet.public.id  #live in our public subnet
+		191 |   vpc_security_group_ids      = [aws_security_group.web.id]    #guarded by our web bouncer
+		192 |   key_name                    = aws_key_pair.main.key_name     #use our registered key
+		193 |   associate_public_ip_address = true                       #give it a pub IP so we can reach it
+		194 |   iam_instance_profile        = aws_iam_role.web.name
+		195 | 
+		196 | #Enforce IMSDv2 - requires a session token for instance metadata access.
+		197 |   metadata_options {
+		198 |    http_tokens = "required"
+		199 | }
+		200 | 
+		201 | root_block_device {
+		202 |  encrypted = true
+		203 | }
+		204 | 
+		205 |   tags = {
+		206 |     Name = "cloud-devsecops-web"
+		207 |  }
+		208 | }
 
 Check: CKV_AWS_135: "Ensure that EC2 is EBS optimized"
 	FAILED for resource: aws_instance.web
-	File: /main.tf:150-170
+	File: /main.tf:187-208
 	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-general-policies/ensure-that-ec2-is-ebs-optimized
 
-		150 | resource "aws_instance" "web" {
-		151 |   ami                         = data.aws_ami.ubuntu.id   #the Ubuntu 22.04 image we looked up
-		152 |   instance_type               = "t3.micro"            #Free-tier eligible size
-		153 |   subnet_id                   = aws_subnet.public.id  #live in our public subnet
-		154 |   vpc_security_group_ids      = [aws_security_group.web.id]    #guarded by our web bouncer
-		155 |   key_name                    = aws_key_pair.main.key_name     #use our registered key
-		156 |   associate_public_ip_address = true                       #give it a pub IP so we can reach it
-		157 | 
-		158 | #Enforce IMSDv2 - requires a session token for instance metadata access.
-		159 |   metadata_options {
-		160 |    http_tokens = "required"
-		161 | }
-		162 | 
-		163 | root_block_device {
-		164 |  encrypted = true
-		165 | }
-		166 | 
-		167 |   tags = {
-		168 |     Name = "cloud-devsecops-web"
-		169 |  }
-		170 | }
+		187 | resource "aws_instance" "web" {
+		188 |   ami                         = data.aws_ami.ubuntu.id   #the Ubuntu 22.04 image we looked up
+		189 |   instance_type               = "t3.micro"            #Free-tier eligible size
+		190 |   subnet_id                   = aws_subnet.public.id  #live in our public subnet
+		191 |   vpc_security_group_ids      = [aws_security_group.web.id]    #guarded by our web bouncer
+		192 |   key_name                    = aws_key_pair.main.key_name     #use our registered key
+		193 |   associate_public_ip_address = true                       #give it a pub IP so we can reach it
+		194 |   iam_instance_profile        = aws_iam_role.web.name
+		195 | 
+		196 | #Enforce IMSDv2 - requires a session token for instance metadata access.
+		197 |   metadata_options {
+		198 |    http_tokens = "required"
+		199 | }
+		200 | 
+		201 | root_block_device {
+		202 |  encrypted = true
+		203 | }
+		204 | 
+		205 |   tags = {
+		206 |     Name = "cloud-devsecops-web"
+		207 |  }
+		208 | }
 
 Check: CKV_AWS_88: "EC2 instance should not have public IP."
 	FAILED for resource: aws_instance.web
-	File: /main.tf:150-170
+	File: /main.tf:187-208
 	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/public-policies/public-12
 
-		150 | resource "aws_instance" "web" {
-		151 |   ami                         = data.aws_ami.ubuntu.id   #the Ubuntu 22.04 image we looked up
-		152 |   instance_type               = "t3.micro"            #Free-tier eligible size
-		153 |   subnet_id                   = aws_subnet.public.id  #live in our public subnet
-		154 |   vpc_security_group_ids      = [aws_security_group.web.id]    #guarded by our web bouncer
-		155 |   key_name                    = aws_key_pair.main.key_name     #use our registered key
-		156 |   associate_public_ip_address = true                       #give it a pub IP so we can reach it
-		157 | 
-		158 | #Enforce IMSDv2 - requires a session token for instance metadata access.
-		159 |   metadata_options {
-		160 |    http_tokens = "required"
-		161 | }
-		162 | 
-		163 | root_block_device {
-		164 |  encrypted = true
-		165 | }
-		166 | 
-		167 |   tags = {
-		168 |     Name = "cloud-devsecops-web"
-		169 |  }
-		170 | }
-
-Check: CKV2_AWS_41: "Ensure an IAM role is attached to EC2 instance"
-	FAILED for resource: aws_instance.web
-	File: /main.tf:150-170
-	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-iam-policies/ensure-an-iam-role-is-attached-to-ec2-instance
-
-		150 | resource "aws_instance" "web" {
-		151 |   ami                         = data.aws_ami.ubuntu.id   #the Ubuntu 22.04 image we looked up
-		152 |   instance_type               = "t3.micro"            #Free-tier eligible size
-		153 |   subnet_id                   = aws_subnet.public.id  #live in our public subnet
-		154 |   vpc_security_group_ids      = [aws_security_group.web.id]    #guarded by our web bouncer
-		155 |   key_name                    = aws_key_pair.main.key_name     #use our registered key
-		156 |   associate_public_ip_address = true                       #give it a pub IP so we can reach it
-		157 | 
-		158 | #Enforce IMSDv2 - requires a session token for instance metadata access.
-		159 |   metadata_options {
-		160 |    http_tokens = "required"
-		161 | }
-		162 | 
-		163 | root_block_device {
-		164 |  encrypted = true
-		165 | }
-		166 | 
-		167 |   tags = {
-		168 |     Name = "cloud-devsecops-web"
-		169 |  }
-		170 | }
+		187 | resource "aws_instance" "web" {
+		188 |   ami                         = data.aws_ami.ubuntu.id   #the Ubuntu 22.04 image we looked up
+		189 |   instance_type               = "t3.micro"            #Free-tier eligible size
+		190 |   subnet_id                   = aws_subnet.public.id  #live in our public subnet
+		191 |   vpc_security_group_ids      = [aws_security_group.web.id]    #guarded by our web bouncer
+		192 |   key_name                    = aws_key_pair.main.key_name     #use our registered key
+		193 |   associate_public_ip_address = true                       #give it a pub IP so we can reach it
+		194 |   iam_instance_profile        = aws_iam_role.web.name
+		195 | 
+		196 | #Enforce IMSDv2 - requires a session token for instance metadata access.
+		197 |   metadata_options {
+		198 |    http_tokens = "required"
+		199 | }
+		200 | 
+		201 | root_block_device {
+		202 |  encrypted = true
+		203 | }
+		204 | 
+		205 |   tags = {
+		206 |     Name = "cloud-devsecops-web"
+		207 |  }
+		208 | }
 
 Check: CKV2_AWS_11: "Ensure VPC flow logging is enabled in all VPCs"
 	FAILED for resource: aws_vpc.main
@@ -343,6 +354,58 @@ Check: CKV2_AWS_12: "Ensure the default security group of every VPC restricts al
 		28 |   }
 		29 | }
 
+github_actions scan results:
+
+Passed checks: 15, Failed checks: 1, Skipped checks: 0
+
+Check: CKV_GHA_2: "Ensure run commands are not vulnerable to shell injection"
+	PASSED for resource: jobs(checkov)
+	File: /.github/workflows/security_scanner.yml:9-22
+Check: CKV_GHA_4: "Suspicious use of netcat with IP address"
+	PASSED for resource: jobs(checkov)
+	File: /.github/workflows/security_scanner.yml:9-22
+Check: CKV_GHA_6: "Found artifact build without evidence of cosign sbom attestation in pipeline"
+	PASSED for resource: jobs
+	File: /.github/workflows/security_scanner.yml:8-22
+Check: CKV_GHA_5: "Found artifact build without evidence of cosign sign execution in pipeline"
+	PASSED for resource: jobs
+	File: /.github/workflows/security_scanner.yml:8-22
+Check: CKV_GHA_1: "Ensure ACTIONS_ALLOW_UNSECURE_COMMANDS isn't true on environment variables"
+	PASSED for resource: jobs(checkov)
+	File: /.github/workflows/security_scanner.yml:9-22
+Check: CKV_GHA_3: "Suspicious use of curl with secrets"
+	PASSED for resource: jobs(checkov)
+	File: /.github/workflows/security_scanner.yml:9-22
+Check: CKV_GHA_7: "The build output cannot be affected by user parameters other than the build entry point and the top-level source location. GitHub Actions workflow_dispatch inputs MUST be empty. "
+	PASSED for resource: on(Security Scan)
+	File: /.github/workflows/security_scanner.yml:4-8
+Check: CKV_GHA_2: "Ensure run commands are not vulnerable to shell injection"
+	PASSED for resource: jobs(checkov).steps[1](Check out the repository)
+	File: /.github/workflows/security_scanner.yml:13-17
+Check: CKV_GHA_2: "Ensure run commands are not vulnerable to shell injection"
+	PASSED for resource: jobs(checkov).steps[2](Run Checkov)
+	File: /.github/workflows/security_scanner.yml:16-22
+Check: CKV_GHA_4: "Suspicious use of netcat with IP address"
+	PASSED for resource: jobs(checkov).steps[1](Check out the repository)
+	File: /.github/workflows/security_scanner.yml:13-17
+Check: CKV_GHA_4: "Suspicious use of netcat with IP address"
+	PASSED for resource: jobs(checkov).steps[2](Run Checkov)
+	File: /.github/workflows/security_scanner.yml:16-22
+Check: CKV_GHA_1: "Ensure ACTIONS_ALLOW_UNSECURE_COMMANDS isn't true on environment variables"
+	PASSED for resource: jobs(checkov).steps[1](Check out the repository)
+	File: /.github/workflows/security_scanner.yml:13-17
+Check: CKV_GHA_1: "Ensure ACTIONS_ALLOW_UNSECURE_COMMANDS isn't true on environment variables"
+	PASSED for resource: jobs(checkov).steps[2](Run Checkov)
+	File: /.github/workflows/security_scanner.yml:16-22
+Check: CKV_GHA_3: "Suspicious use of curl with secrets"
+	PASSED for resource: jobs(checkov).steps[1](Check out the repository)
+	File: /.github/workflows/security_scanner.yml:13-17
+Check: CKV_GHA_3: "Suspicious use of curl with secrets"
+	PASSED for resource: jobs(checkov).steps[2](Run Checkov)
+	File: /.github/workflows/security_scanner.yml:16-22
+Check: CKV2_GHA_1: "Ensure top-level permissions are not set to write-all"
+	FAILED for resource: on(Security Scan)
+	File: /.github/workflows/security_scanner.yml:0-1
 ansible scan results:
 
 Passed checks: 4, Failed checks: 0, Skipped checks: 0
