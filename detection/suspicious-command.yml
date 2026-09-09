@@ -1,0 +1,28 @@
+title: Suspicious Command Execution - Download and Execute
+id: 3f9b2d7a-1c4e-4a8b-b2f0-6e1d9c3a5b22
+status: experimental
+description: Detects downloading a remote script and piping it directly into a shell, a common malware delivery pattern.
+references:
+  - https://attack.mitre.org/techniques/T1059/
+author: Nicolas Hoyos
+date: 2026/08/29
+tags:
+  - attack.execution
+  - attack.t1059
+logsource:
+  product: linux
+  service: shell
+detection:
+  selection_download:
+    CommandLine|contains:
+      - 'curl'
+      - 'wget'
+  selection_pipe:
+    CommandLine|contains:
+      - '| bash'
+      - '| sh'
+  condition: selection_download and selection_pipe
+falsepositives:
+  - Legitimate install scripts run by an administrator
+level: high
+

@@ -1,0 +1,23 @@
+title: SSH Brute Force Attempt
+id: 8a2f1c4e-0b3d-4e6a-9c1f-2d5e7a9b0c11
+status: experimental
+description: Detects many failed SSH logins from a single source, indicating a brute-force attempt.
+references:
+  - https://attack.mitre.org/techniques/T1110/
+author: Nicolas Hoyos
+date: 2026/08/29
+tags:
+  - attack.credential_access
+  - attack.t1110
+logsource:
+  product: linux
+  service: auth
+detection:
+  selection:
+    - 'Failed password'
+  timeframe: 1m
+  condition: selection | count() by src_ip > 10
+falsepositives:
+  - A user repeatedly mistyping their password
+  - Automated scripts with stale credentials
+level: high
