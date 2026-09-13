@@ -11,3 +11,6 @@
 **/fresh-logs.json
 .env
 **/.env
+
+
+*.save
