@@ -1,0 +1,37 @@
+# Local ELK SIEM (Elasticsearch + Kibana) for detection-rule development.
+# SECURITY NOTE: secrets below are PLACEHOLDERS. Never commit real values.
+#   - Generate a strong encryption key:  openssl rand -hex 16
+#   - Set passwords via a .gitignored .env file or environment variables,
+#     not inline. This file is committed only as a reference template.
+
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.0
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=true            # auth ON (required for the detection engine)
+      - ELASTIC_PASSWORD=<SET_VIA_ENV>         # do NOT hardcode a real password
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g             # cap heap so it doesn't eat the host
+    ports:
+      - "9200:9200"
+    volumes:
+      - esdata:/usr/share/elasticsearch/data   # persist data across restarts
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.15.0
+    container_name: kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - ELASTICSEARCH_USERNAME=kibana_system
+      - ELASTICSEARCH_PASSWORD=<SET_VIA_ENV>   # do NOT hardcode
+      # Env-var form of xpack.encryptedSavedObjects.encryptionKey (UPPERCASE, dots->underscores).
+      # Required so detection/alerting APIs work and rules survive restarts.
+      - XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY=<GENERATE_WITH_openssl_rand_hex_16>
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+
+volumes:
+  esdata:

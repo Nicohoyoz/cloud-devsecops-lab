@@ -1,0 +1,14 @@
+{"index":{"_index":"auth-logs"}}
+{"timestamp":"2026-09-10T10:00:01","event":"ssh_login_failed","user":"root","src_ip":"192.168.1.100","message":"Failed password for root"}
+{"index":{"_index":"auth-logs"}}
+{"timestamp":"2026-09-10T10:00:03","event":"ssh_login_failed","user":"admin","src_ip":"192.168.1.100","message":"Failed password for admin"}
+{"index":{"_index":"auth-logs"}}
+{"timestamp":"2026-09-10T10:00:05","event":"ssh_login_failed","user":"root","src_ip":"192.168.1.100","message":"Failed password for root"}
+{"index":{"_index":"auth-logs"}}
+{"timestamp":"2026-09-10T10:00:07","event":"ssh_login_failed","user":"ubuntu","src_ip":"192.168.1.100","message":"Failed password for ubuntu"}
+{"index":{"_index":"auth-logs"}}
+{"timestamp":"2026-09-10T10:00:09","event":"ssh_login_failed","user":"root","src_ip":"192.168.1.100","message":"Failed password for root"}
+{"index":{"_index":"auth-logs"}}
+{"timestamp":"2026-09-10T10:00:11","event":"ssh_login_failed","user":"test","src_ip":"192.168.1.100","message":"Failed password for test"}
+{"index":{"_index":"auth-logs"}}
+{"timestamp":"2026-09-10T10:05:00","event":"ssh_login_success","user":"nico","src_ip":"10.0.0.5","message":"Accepted password for nico"}
