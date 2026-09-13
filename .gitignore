@@ -5,3 +5,9 @@
 
 # Credentials — never commit these
 *.tfvars
+
+# SIEM — never commit real secrets or throwaway data
+**/docker-compose.local.yml
+**/fresh-logs.json
+.env
+**/.env
