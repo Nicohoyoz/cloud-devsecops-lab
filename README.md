@@ -1,133 +1,95 @@
 # cloud-devsecops-lab
 
-AWS infrastructure built as code with Terraform, configured with Ansible, checked
-by automated security scanning in a CI/CD pipeline, and paired with detection
-rules mapped to MITRE ATT&CK. Everything is provisioned from version control, not
-clicked together in a console. The aim is one documented system showing how cloud
-infrastructure gets built, configured, secured, continuously checked, and
-monitored for attacks.
+An AWS project built entirely as code, with security and detection layered in.
+Terraform provisions the infrastructure, Ansible configures it, Checkov scans it
+in a CI pipeline, an IAM role replaces static keys, and detection rules — written
+in Sigma and run in a real Elastic SIEM — catch attacks against the host.
+Everything comes from version control, not console clicks.
 
-Status: in progress. AWS networking, a running EC2 instance, Ansible
-configuration, an IAM role, Checkov scanning, a GitHub Actions pipeline, and
-Sigma detection rules are built. A live SIEM deployment (Elastic) and container
-packaging are planned, and listed in the roadmap. Each item moves out of
-"planned" only once it works.
+Still in progress, and honest about it: the table at the bottom marks what's
+actually built versus planned. Nothing gets called "done" until it works.
 
-## Built so far
+![Architecture](architecture.svg)
 
-**Networking and compute (Terraform).** A VPC (`10.0.0.0/16`) with a public
-subnet (`10.0.1.0/24`) pinned to an availability zone, an internet gateway, a
-route table, and a default-deny security group allowing inbound SSH and HTTP
-only. An Ubuntu 22.04 EC2 instance (`t3.micro`) runs in the subnet. The AMI is
-resolved at plan time by a data source instead of being hardcoded.
+## What's built
 
-**Configuration (Ansible).** A playbook installs nginx, ensures it runs and is
-enabled on boot, and deploys a custom page. Terraform builds the machine; Ansible
-decides what it runs.
+**Infrastructure (Terraform).** A VPC (`10.0.0.0/16`) with a public subnet
+pinned to an availability zone, an internet gateway, routing, and a default-deny
+security group that only opens SSH and HTTP. An Ubuntu EC2 instance runs in it,
+with the AMI looked up at plan time instead of hardcoded. Whole thing stands up
+and tears down in about two minutes.
 
-**IAM role (Terraform).** The instance has a least-privilege IAM role attached
-through an instance profile, granting SSM management access via the AWS-managed
-`AmazonSSMManagedInstanceCore` policy. The instance gets temporary,
-auto-rotating credentials through the metadata endpoint (protected by IMDSv2)
-rather than static keys.
+**Configuration (Ansible).** A playbook installs nginx, keeps it running, and
+drops a custom page in. Terraform builds the box; Ansible decides what runs on it.
 
-**Security scanning (Checkov).** The Terraform is scanned with Checkov. Findings
-were triaged, not blindly fixed to green: real issues corrected, intentional lab
-choices accepted with reasons, production-scale items ruled out of scope. Score
-went from 9 passed / 12 failed to 20 passed / 8 failed. Fixes: IMDSv2 enforced
-(SSRF mitigation), EBS encryption at rest, IAM role attached, security-group rule
-descriptions. Full triage in
+**IAM as code (Terraform).** The instance carries a least-privilege IAM role
+(attached through an instance profile) with SSM access via an AWS-managed policy.
+It gets temporary, rotating credentials from the metadata endpoint — which IMDSv2
+protects — instead of static keys sitting on the box.
+
+**Security scanning (Checkov).** Scanned the Terraform, then triaged the findings
+instead of chasing a clean score: fixed the ones that mattered, accepted the
+intentional lab choices with reasons, and ruled out the production-scale ones.
+Went from 9 passing / 12 failing to 20 / 8. The real fixes were IMDSv2, EBS
+encryption, the IAM role, and rule descriptions. Full triage is in
 [`security/checkov-triage.md`](security/checkov-triage.md).
 
-**CI/CD (GitHub Actions).** A workflow in
-[`.github/workflows/`](.github/workflows/) runs the Checkov scan automatically on
-every push and pull request, with soft-fail so findings surface as annotations
-while the build passes on already-triaged risks.
+**CI/CD (GitHub Actions).** Every push and pull request runs the Checkov scan
+automatically on a hosted runner. Soft-fail, so already-triaged findings show up
+as annotations without breaking the build. The scan is enforced by the pipeline
+instead of depending on remembering to run it.
 
-**Detection (Sigma + MITRE ATT&CK).** Detection rules in
-[`detection/`](detection/) written in vendor-neutral Sigma format and mapped to
-ATT&CK techniques: SSH brute force (T1110) and download-and-execute (T1059).
-Techniques were chosen from current threat reporting and for fitting a Linux
-host; each rule documents its blind spots and false positives. See
-[`detection/README.md`](detection/README.md).
+**Detection engineering (Sigma + MITRE ATT&CK).** Two vendor-neutral Sigma rules
+mapped to ATT&CK — SSH brute force (T1110) and download-and-execute (T1059) —
+picked from current threat reporting and for actually fitting a Linux host, each
+with its blind spots written down. See [`detection/`](detection/).
 
-The stack comes up with `terraform apply`, is configured with `ansible-playbook`,
-is scanned on every push, and tears down with `terraform destroy`. A full rebuild
-takes about two minutes.
+**SIEM (Elastic / ELK).** Took the detection work further and actually ran it:
+stood up Elasticsearch + Kibana in Docker, secured it, ingested attack logs, and
+built a threshold rule that **fired an alert** on a simulated SSH brute force.
+That's operating a SIEM, not just writing rules on paper. See [`siem/`](siem/).
 
 ## Layout
 
 ```
-main.tf                       VPC, subnet, gateway, routing, security group,
-                              EC2, IAM role + instance profile
-ansible/
-  inventory.ini               target host and SSH connection settings
-  web.yml                     install nginx, deploy the page
-  files/index.html            the page that gets served
-security/
-  checkov-triage.md           every finding, triaged with reasons
-  checkov-results.txt         raw scan output
-.github/workflows/
-  security_scanner.yml        runs Checkov on every push / pull request
-detection/
-  ssh-bruteforce.yml          Sigma rule — SSH brute force (T1110)
-  suspicious-command.yml      Sigma rule — download and execute (T1059)
-  README.md                   rule logic, ATT&CK mappings, limitations
+main.tf                       VPC, subnet, gateway, routing, SG, EC2, IAM role
+ansible/                      playbook + inventory to configure the instance
+security/                     Checkov triage and raw scan output
+.github/workflows/            GitHub Actions — runs Checkov on push
+detection/                    Sigma rules + ATT&CK mappings and write-up
+siem/                         Elastic SIEM: compose, sample logs, fired-alert proof
 ```
 
-## Running it
+## The choices worth explaining
 
-```bash
-terraform init            # download the AWS provider
-terraform plan            # read this before every apply
-terraform apply           # build the infrastructure
+- **AMI looked up, not hardcoded** — hardcoded IDs go stale and differ by region.
+- **Default-deny SG** — only SSH and HTTP open. SSH is open to the world here for
+  lab convenience; in production that'd be a known IP, a bastion, or SSM. Checkov
+  flags it; the triage doc owns the decision.
+- **Public IP on purpose** — it's a single reachable lab box. Production would be
+  private behind a load balancer, reached through a bastion.
+- **IAM role over static keys** — temporary credentials from the IMDSv2-protected
+  metadata endpoint, nothing hardcoded on the instance.
+- **Destroy after each session** — IaC makes rebuilds cheap, and a zero-spend
+  billing alarm backs it up.
+- **No secrets in the repo** — state files, credentials, and SIEM passwords/keys
+  are git-ignored or placeholdered. Keys are generated, not guessed.
 
-cd ansible
-ansible-playbook -i inventory.ini web.yml   # configure the server
-
-checkov -d .              # scan locally (also runs automatically in CI)
-
-terraform destroy         # tear it all down, stops cost
-```
-
-Credentials come from the AWS CLI (`~/.aws`) and are never stored in the repo.
-State file and provider cache are git-ignored. The inventory holds the instance's
-public IP, which changes each rebuild; a later phase will have Terraform generate
-it automatically.
-
-## Notes on the choices
-
-- **AMI looked up, not hardcoded.** Hardcoded IDs go stale and differ per region.
-- **Default-deny security group.** Only SSH (22) and HTTP (80) open inbound. SSH
-  is open to `0.0.0.0/0` for lab convenience; production would restrict it or use
-  SSM Session Manager. Checkov flags this; the triage doc accepts it with reason.
-- **Public IP is intentional.** A single reachable lab server; production would be
-  private behind a load balancer, reached via a bastion.
-- **Least-privilege IAM role.** SSM access via an AWS-managed policy; temporary
-  credentials over the IMDSv2-protected metadata endpoint, no static keys.
-- **Soft-fail in CI.** The pipeline reports every finding but blocks only on hard
-  errors, so triaged-and-accepted risks don't fail the build.
-- **Detections match the system.** Rules target trending techniques that fit a
-  Linux host; unfit ones (phishing, process injection) were deliberately excluded.
-- **Destroy after each session.** IaC makes a two-minute rebuild cheap. A
-  zero-spend billing alarm backs this up.
-
-## Roadmap
+## Status
 
 | Phase | Item | Status |
 |---|---|---|
-| 2 | VPC, subnet, gateway, routing, security group, EC2 (Terraform) | Done |
-| 2 | Install nginx and deploy a page (Ansible) | Done |
-| 3 | IaC security scanning with Checkov, findings triaged | Done |
-| 3 | CI/CD pipeline running the scan on every push (GitHub Actions) | Done |
+| 2 | VPC, subnet, gateway, routing, SG, EC2 (Terraform) | Done |
+| 2 | nginx + custom page (Ansible) | Done |
+| 3 | Checkov scanning, findings triaged | Done |
+| 3 | CI pipeline running the scan on push (GitHub Actions) | Done |
 | 3 | IAM role as code, attached to the instance | Done |
-| 3 | Sigma detection rules mapped to MITRE ATT&CK | Done |
-| 3 | Deploy detections to a live SIEM (Elastic / ELK in Docker) | Planned |
-| 2 | Run the service in a Docker container | Planned |
+| 3 | Sigma detection rules mapped to ATT&CK | Done |
+| 3 | Detection running in a real SIEM (Elastic), alert fired | Done |
+| 2 | Service in a Docker container | Planned |
 
 ## Related
 
 Builds on [`linux-infra-lab`](https://github.com/Nicohoyoz/linux-infra-lab):
-Terraform against a local container fleet, Ansible, Docker, and
-Prometheus/Grafana. This repo takes those patterns to real cloud and adds a
-security and detection focus.
+Terraform on a local container fleet, Ansible, Docker, Prometheus/Grafana. This
+repo takes the same patterns to real cloud and adds security and detection.
